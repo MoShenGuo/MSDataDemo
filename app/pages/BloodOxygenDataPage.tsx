@@ -27,7 +27,7 @@ const BloodOxygenDataPage: React.FC = () => {
   const [list, setList] = useState<Record<string, any>[]>([]);
   const [dataCount, setDataCount] = useState<number>(0);
   const [isLoading, setIsLoading] = useState<boolean>(false);
-  const [mode, setMode] = useState<1 | 2>(1); // 1: 手动血氧, 2: 自动血氧
+  const [mode, setMode] = useState<1 | 2>(2); // 1: 手动血氧, 2: 自动血氧
 
   // 引用保存 writeData
   const writeDataRef = React.useRef<((data: any) => void) | null>(null);

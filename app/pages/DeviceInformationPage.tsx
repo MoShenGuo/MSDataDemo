@@ -1,4 +1,145 @@
 
+// import {
+//   Alert,
+//   Button,
+//   KeyboardAvoidingView,
+//   Platform,
+//   ScrollView,
+//   StyleSheet,
+//   View
+// } from 'react-native';
+
+// import React, { useCallback } from 'react';
+
+// import { BleConst, BleSDK, DeviceKey } from "@moshenguo/ms-data-sdk";
+// import { useTranslation } from "react-i18next";
+// import BaseBleComponent from '../BaseBleComponent'; // 确保路径正确
+// const DeviceInformationPage = () => {
+//      const { t } = useTranslation(); 
+//   // 处理从蓝牙收到的数据
+//   const handleDataReceived = useCallback((data: Record<string, any>) => {
+//     const dataType = data[DeviceKey.DataType];
+
+//     switch (dataType) {
+//       case BleConst.GetDeviceBatteryLevel:
+//       case BleConst.CMD_MCUReset:
+//       case BleConst.GetDeviceMacAddress:
+//       case BleConst.GetDeviceVersion:
+//       case BleConst.GetDeviceInfo:
+//       case BleConst.SetDeviceInfo:
+//         // 弹出收到的数据（可用于调试或展示）
+//         Alert.alert('收到设备信息', JSON.stringify(data, null, 2));
+//         break;
+//       default:
+//         console.log('未知数据类型:', dataType);
+//     }
+//   }, []);
+
+//   // 弹出确认对话框（用于“初始化”等危险操作）
+//   const showConfirmDialog = (title: string, message: string, onConfirm: () => void) => {
+//     Alert.alert(title, message, [
+//       { text: '取消', style: 'cancel' },
+//       { text: '确定', onPress: onConfirm },
+//     ]);
+//   };
+
+//   return (
+//     <BaseBleComponent onDataReceived={handleDataReceived}>
+//       {({ connected, writeData }) => (
+//         <KeyboardAvoidingView
+//           behavior={Platform.OS === 'ios' ? 'padding' : undefined}
+//           style={styles.container}
+//         >
+//           <ScrollView contentContainerStyle={styles.scrollContent}>
+//             {/* 页面标题 */}
+//             {/* 第一行：初始化 + 电量 */}
+//             <View style={styles.row}>
+//               <View style={styles.buttonContainer}>
+//                 <Button
+//                   title={t("初始化")}
+//                   color="#d32f2f"
+//                   onPress={() =>
+//                     showConfirmDialog(
+//                       t('提示'),
+//                       t('出厂重置将清除设备中的所有数据，请确认是否要重置？'),
+//                       () => writeData(BleSDK.reset())
+//                     )
+//                   }
+//                 />
+//               </View>
+//               <View style={styles.buttonContainer}>
+//                 <Button title={t("电量")} onPress={() => writeData(BleSDK.getDeviceBatteryLevel())} />
+//               </View>
+//             </View>
+
+//             {/* 第二行：蓝牙Mac地址 + 固件版本 */}
+//             <View style={styles.row}>
+//               <View style={styles.buttonContainer}>
+//                 <Button
+//                   title={t("蓝牙Mac地址")}
+//                   onPress={() => writeData(BleSDK.getDeviceMacAddress())}
+//                 />
+//               </View>
+//               <View style={styles.buttonContainer}>
+//                 <Button
+//                   title={t("固件版本")}
+//                   onPress={() => writeData(BleSDK.getDeviceVersion())}
+//                 />
+//               </View>
+//             </View>
+
+//             {/* 第三行：MCU重启 + 进入升级模式 */}
+//             <View style={styles.row}>
+//               <View style={styles.buttonContainer}>
+//                 <Button title={t("MCU重启")} onPress={() => writeData(BleSDK.mcuReset())} />
+//               </View>
+//               <View style={styles.buttonContainer}>
+//                 <Button
+//                   title={t("进入升级模式")}
+//                   onPress={() => writeData(BleSDK.enterOTA())}
+//                 />
+//               </View>
+//             </View>
+
+//             {/* 可在此添加设备信息展示区域 */}
+//           </ScrollView>
+//         </KeyboardAvoidingView>
+//       )}
+//     </BaseBleComponent>
+//   );
+// };
+
+// export default DeviceInformationPage;
+
+// // 样式定义
+// const styles = StyleSheet.create({
+//   container: {
+//     flex: 1,
+//     backgroundColor: '#f5f5f5',
+//   },
+//   scrollContent: {
+//     padding: 16,
+//   },
+//   title: {
+//     fontSize: 20,
+//     fontWeight: 'bold',
+//     textAlign: 'center',
+//     marginVertical: 16,
+//     color: '#333',
+//   },
+//   row: {
+//     flexDirection: 'row',
+//     marginBottom: 12,
+//   },
+//   buttonContainer: {
+//     flex: 1,
+//     marginHorizontal: 5,
+//   },
+// });
+
+
+
+import { useCallback, useState } from 'react';
 import {
   Alert,
   Button,
@@ -6,17 +147,21 @@ import {
   Platform,
   ScrollView,
   StyleSheet,
-  View
+  Switch,
+  Text,
+  View,
 } from 'react-native';
 
-import React, { useCallback } from 'react';
-
 import { BleConst, BleSDK, DeviceKey } from "@moshenguo/ms-data-sdk";
-import { useTranslation } from "react-i18next";
 import BaseBleComponent from '../BaseBleComponent'; // 确保路径正确
+
 const DeviceInformationPage = () => {
-     const { t } = useTranslation(); 
-  // 处理从蓝牙收到的数据
+  // 开关状态
+  const [sport, setSport] = useState(false);
+  const [heart, setHeart] = useState(false);
+  const [heartDay, setHeartDay] = useState(false);
+
+  // 蓝牙数据回调
   const handleDataReceived = useCallback((data: Record<string, any>) => {
     const dataType = data[DeviceKey.DataType];
 
@@ -27,7 +172,12 @@ const DeviceInformationPage = () => {
       case BleConst.GetDeviceVersion:
       case BleConst.GetDeviceInfo:
       case BleConst.SetDeviceInfo:
-        // 弹出收到的数据（可用于调试或展示）
+        if (dataType === BleConst.GetDeviceInfo) {
+          const d = data[DeviceKey.Data] || {};
+          setSport(d.SportEnable !== '0');
+          setHeart(d.HeartEnable !== '0');
+          setHeartDay(d.HeartDayEnable !== '0');
+        }
         Alert.alert('收到设备信息', JSON.stringify(data, null, 2));
         break;
       default:
@@ -35,7 +185,7 @@ const DeviceInformationPage = () => {
     }
   }, []);
 
-  // 弹出确认对话框（用于“初始化”等危险操作）
+  // 确认弹窗
   const showConfirmDialog = (title: string, message: string, onConfirm: () => void) => {
     Alert.alert(title, message, [
       { text: '取消', style: 'cancel' },
@@ -51,12 +201,11 @@ const DeviceInformationPage = () => {
           style={styles.container}
         >
           <ScrollView contentContainerStyle={styles.scrollContent}>
-            {/* 页面标题 */}
             {/* 第一行：初始化 + 电量 */}
             <View style={styles.row}>
               <View style={styles.buttonContainer}>
                 <Button
-                  title={t("初始化")}
+                  title= {t("初始化")}
                   color="#d32f2f"
                   onPress={() =>
                     showConfirmDialog(
@@ -75,16 +224,10 @@ const DeviceInformationPage = () => {
             {/* 第二行：蓝牙Mac地址 + 固件版本 */}
             <View style={styles.row}>
               <View style={styles.buttonContainer}>
-                <Button
-                  title={t("蓝牙Mac地址")}
-                  onPress={() => writeData(BleSDK.getDeviceMacAddress())}
-                />
+                <Button title={t("蓝牙Mac地址")} onPress={() => writeData(BleSDK.getDeviceMacAddress())} />
               </View>
               <View style={styles.buttonContainer}>
-                <Button
-                  title={t("固件版本")}
-                  onPress={() => writeData(BleSDK.getDeviceVersion())}
-                />
+                <Button title={t("固件版本")} onPress={() => writeData(BleSDK.getDeviceVersion())} />
               </View>
             </View>
 
@@ -94,14 +237,32 @@ const DeviceInformationPage = () => {
                 <Button title={t("MCU重启")} onPress={() => writeData(BleSDK.mcuReset())} />
               </View>
               <View style={styles.buttonContainer}>
-                <Button
-                  title={t("进入升级模式")}
-                  onPress={() => writeData(BleSDK.enterOTA())}
-                />
+                <Button title={t("进入升级模式")} onPress={() => writeData(BleSDK.enterOTA())} />
               </View>
             </View>
 
-            {/* 可在此添加设备信息展示区域 */}
+            {/* 开关控制 */}
+            <View style={styles.row}>
+              <Text style={styles.switchLabel}>{t("运动模式")}</Text>
+              <Switch value={sport} onValueChange={setSport} />
+              <Text style={styles.switchLabel}>{t("心率")}</Text>
+              <Switch value={heart} onValueChange={setHeart} />
+              <Text style={styles.switchLabel}>{t("全天心率")}</Text>
+              <Switch value={heartDay} onValueChange={setHeartDay} />
+            </View>
+
+            {/* 设置/获取设备信息按钮 */}
+            <View style={styles.row}>
+              <View style={styles.buttonContainer}>
+                <Button
+                  title={t("设置设备信息")}
+                  onPress={() => writeData(BleSDK.setDeviceInfoV5(heart, sport, heartDay))}
+                />
+              </View>
+              <View style={styles.buttonContainer}>
+                <Button title={t("获取设备信息")} onPress={() => writeData(BleSDK.getDeviceInfo())} />
+              </View>
+            </View>
           </ScrollView>
         </KeyboardAvoidingView>
       )}
@@ -111,28 +272,14 @@ const DeviceInformationPage = () => {
 
 export default DeviceInformationPage;
 
-// 样式定义
 const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-    backgroundColor: '#f5f5f5',
-  },
-  scrollContent: {
-    padding: 16,
-  },
-  title: {
-    fontSize: 20,
-    fontWeight: 'bold',
-    textAlign: 'center',
-    marginVertical: 16,
-    color: '#333',
-  },
+  container: { flex: 1, backgroundColor: '#f5f5f5' },
+  scrollContent: { padding: 16 },
   row: {
     flexDirection: 'row',
+    alignItems: 'center',
     marginBottom: 12,
   },
-  buttonContainer: {
-    flex: 1,
-    marginHorizontal: 5,
-  },
+  buttonContainer: { flex: 1, marginHorizontal: 5 },
+  switchLabel: { marginHorizontal: 5 },
 });

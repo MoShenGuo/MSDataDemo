@@ -73,7 +73,7 @@ const BasicInformationPage: React.FC = () => {
         // const finish = data.get(DeviceKey.End) || false;
         const sex1 = info[DeviceKey.Gender];
          const age1 = info[DeviceKey.Age];
-    setSex(Boolean(sex1 === 1)); // 根据协议调整
+    setSex(Boolean(sex1 === 0)); // 根据协议调整,0表示女性
     setAge(String(age1|| ''));
     setHeight(String(info[DeviceKey.Height] || ''));
     setWeight(String(info[DeviceKey.Weight] || ''));

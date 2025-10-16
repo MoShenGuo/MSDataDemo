@@ -528,7 +528,7 @@ private async requestAndroidPermissions(): Promise<boolean> {
         }
         // 使用封装的方法统一解析数据
         const valueArray = Base64Utils.parseCharacteristicValue(characteristic.value);
-        const data = BleSDK.dataParsingWithData(valueArray);
+        const data = BleSDK.dataParsingWithData(valueArray,'V5');
         console.log('Receive:', data);
         this.eventEmitter.emit(Constants.BLUE_DATA_RECEIVED, data);
         this.eventEmitter.emit('dataByteCallBack', valueArray);
