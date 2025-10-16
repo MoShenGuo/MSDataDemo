@@ -153,9 +153,10 @@ import {
 } from 'react-native';
 
 import { BleConst, BleSDK, DeviceKey } from "@moshenguo/ms-data-sdk";
+import { useTranslation } from "react-i18next";
 import BaseBleComponent from '../BaseBleComponent'; // 确保路径正确
-
 const DeviceInformationPage = () => {
+   const { t } = useTranslation(); 
   // 开关状态
   const [sport, setSport] = useState(false);
   const [heart, setHeart] = useState(false);
