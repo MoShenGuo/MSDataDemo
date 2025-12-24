@@ -19,6 +19,10 @@ export const screenConfig: Record<string, string> =  {
   "/pages/SedentaryRemindPage": "久坐提醒",
    "/pages/BloodInfoPage": "血糖",
    "/pages/BlueDevicesSettingPage": "关闭蓝牙",
+   "/pages/RemiderBlePage": "提醒",
+   "/pages/WeatherBlePage": "天气",
+   "/pages/TakePhotoBlePage": "拍照模式",
+   "/pages/EcgHistoryBlePage": "ECG",
   "/pages/CmdSendPage": "自定义指令",
   
 };
