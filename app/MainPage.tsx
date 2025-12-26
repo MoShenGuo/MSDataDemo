@@ -154,7 +154,16 @@ const listData = Object.entries(screenConfig).map(([page, title]) => {
         <View style={styles.menuItem}>
           <TouchableOpacity
             style={styles.menuButton}
-            onPress={() => router.push(item.page)}
+            onPress={() => {
+              if (item.page == "/pages/PPGScreen") {
+                router.push({
+                  pathname: item.page,
+                  params: { mac },
+                });
+              }else{
+                router.push(item.page)
+              }
+            }}
           >
             <Text style={styles.menuButtonText}>{item.title}</Text>
           </TouchableOpacity>

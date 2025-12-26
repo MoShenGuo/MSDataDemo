@@ -22,7 +22,7 @@ export const screenConfig: Record<string, string> =  {
    "/pages/RemiderBlePage": "提醒",
    "/pages/WeatherBlePage": "天气",
    "/pages/TakePhotoBlePage": "拍照模式",
-   "/pages/EcgHistoryBlePage": "ECG",
+   "/pages/PPGScreen": "ECG波形",
   "/pages/CmdSendPage": "自定义指令",
   
 };
