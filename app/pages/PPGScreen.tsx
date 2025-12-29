@@ -1,3 +1,5 @@
+import { BleSDK, } from "@moshenguo/ms-data-sdk";
+import { useNavigation, useRoute } from "@react-navigation/core";
 import React, { useCallback, useRef, useState } from "react";
 import {
   Dimensions,
@@ -7,11 +9,6 @@ import {
   View,
 } from "react-native";
 import BaseBleComponent from '../BaseBleComponent'; // 确保路径正确
-// import ECGWaveView from "./ECGWaveView";
-import { BleSDK } from "@moshenguo/ms-data-sdk";
-// import * as BleConst from "ms-data-sdk/build/sdk/bleConst";
-// const { DeviceConst } = BleConst;
-import { useNavigation, useRoute } from "@react-navigation/core";
 import ECGChartView, { ECGChartRef } from "./ECGChartView";
 const { width } = Dimensions.get("window");
 
@@ -26,15 +23,10 @@ export default function PPGScreen() {
   const isMeasuringRef = useRef(false);
   const [isMeasuring, setIsMeasuring] = useState(false);
 
-  const [progress, setProgress] = useState(0);
 
   /** ===== 丢包统计 ===== */
-  const lastPacketIdRef = useRef<number | null>(null);
   const lostTimestampsRef = useRef<number[]>([]);
-  const totalLostCountRef = useRef(0);
 
-  const [totalLost, setTotalLost] = useState(0);
-  const [lostIn5s, setLostIn5s] = useState(0);
   // 保存 writeData 引用
   const writeDataRef = React.useRef<((data: any) => void) | null>(null);
   /** ===== ECG 数据 ===== */
@@ -71,8 +63,6 @@ export default function PPGScreen() {
     } else if (type === 0x07) {
       // 7: ECG 数据
       if (data.length > 16) {
-        const packetId = data[1];
-        handlePacketId(packetId);
 
         const ecgValues: number[] = [];
         const count = Math.floor((data.length - 2) / 3);
@@ -96,44 +86,6 @@ export default function PPGScreen() {
   // 更新 writeData
   const updateWriteData = (writeData: (data: any) => void) => {
     writeDataRef.current = writeData;
-  };
-  /** ================== 丢包统计 ================== */
-  const handlePacketId = (packetId: number) => {
-    const last = lastPacketIdRef.current;
-
-    if (last === null) {
-      lastPacketIdRef.current = packetId;
-      return;
-    }
-
-    const expected = (last + 1) & 0xff;
-
-    if (packetId !== expected) {
-      const lost = (packetId - expected) & 0xff;
-      totalLostCountRef.current += lost;
-
-      const now = Date.now() / 1000;
-      for (let i = 0; i < lost; i++) {
-        lostTimestampsRef.current.push(now);
-      }
-
-      setTotalLost(totalLostCountRef.current);
-    }
-
-    lastPacketIdRef.current = packetId;
-    updateLostIn5s();
-  };
-
-  const updateLostIn5s = () => {
-    const now = Date.now() / 1000;
-    const window = 5;
-
-    const valid = lostTimestampsRef.current.filter(
-      (t) => now - t <= window
-    );
-
-    lostTimestampsRef.current = valid;
-    setLostIn5s(valid.length);
   };
 
   /** ================== ADC 转换 ================== */
@@ -212,12 +164,6 @@ export default function PPGScreen() {
             >
               <Text>Stop</Text>
             </TouchableOpacity>
-          </View>
-
-          {/* 丢包 */}
-          <View style={styles.row}>
-            <Text>Lost: {totalLost}</Text>
-            <Text>Lost(5s): {lostIn5s}</Text>
           </View>
 
           <ECGChartView
