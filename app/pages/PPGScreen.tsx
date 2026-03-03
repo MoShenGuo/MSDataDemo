@@ -1,6 +1,4 @@
-import { BleSDK, } from "@moshenguo/ms-data-sdk";
-import { useNavigation, useRoute } from "@react-navigation/core";
-import React, { useCallback, useRef, useState } from "react";
+import React, { useEffect, useRef, useState } from "react";
 import {
   Dimensions,
   StyleSheet,
@@ -8,184 +6,252 @@ import {
   TouchableOpacity,
   View,
 } from "react-native";
-import BaseBleComponent from '../BaseBleComponent'; // 确保路径正确
-import ECGChartView, { ECGChartRef } from "./ECGChartView";
+
+import {
+  BleSDK,
+  ConstParams,
+  ECGSignalProcessor,
+  Stats,
+} from "@moshenguo/ms-data-sdk";
+import { useRoute } from "@react-navigation/native";
+import BaseBleComponent from "../BaseBleComponent";
+
+import EcgController from "./ecg/EcgController";
+import ECGDataBuffer from "./ecg/ECGDataBuffer";
+
+import ECGNewChartView, {
+  ECGChartRef,
+} from "./ecg/ECGNewChartView";
+
 const { width } = Dimensions.get("window");
 
-const TEST_TIME = 300;
-
 export default function PPGScreen() {
-  const navigation = useNavigation();
-  const route = useRoute();
-  const { mac, name } = route.params || {};
 
-  /** ===== 测量状态 ===== */
+  /** ================= 路由参数 ================= */
+
+  const route = useRoute<any>();
+  const { mac } = route.params || {};
+
+  /** ================= BLE ================= */
+
+  const writeDataRef = useRef<any>(null);
   const isMeasuringRef = useRef(false);
   const [isMeasuring, setIsMeasuring] = useState(false);
 
+  /** ================= 控制器 ================= */
 
-  /** ===== 丢包统计 ===== */
-  const lostTimestampsRef = useRef<number[]>([]);
+  const redController = useRef(new EcgController(1050));
+  const greenController = useRef(new EcgController(1050));
 
-  // 保存 writeData 引用
-  const writeDataRef = React.useRef<((data: any) => void) | null>(null);
-  /** ===== ECG 数据 ===== */
-  const waveRef = useRef<ECGChartRef | null>(null);
+  const redChartRef = useRef<ECGChartRef>(null);
+  const greenChartRef = useRef<ECGChartRef>(null);
+
+  /** ================= 数据处理 ================= */
+
+  const ecgBuffer = useRef(new ECGDataBuffer());
+  const tempArray = useRef<number[]>([]);
+  const params = useRef(new ConstParams());
+  const stats = useRef(new Stats());
+
+  /** ================= 60fps 输出 ================= */
+
+  useEffect(() => {
+
+    ecgBuffer.current.onOutputBatch = (batch) => {
+
+      batch.forEach(value => {
+
+        // 1️⃣ BP 滤波
+        const filtered =
+          ECGSignalProcessor.ecgBPFilter(value);
+
+        // 2️⃣ 填充 1050 窗口
+        if (tempArray.current.length < 1050) {
+          tempArray.current.push(filtered);
+        } else {
+
+          // 3️⃣ 分析
+          const analyzed =
+            ECGSignalProcessor.analyzeSignal(
+              tempArray.current,
+              params.current,
+              stats.current
+            );
+
+          // 4️⃣ 滑动 50
+          const redData = analyzed.slice(50);
+          const greenData = tempArray.current.slice(50);
+
+          redController.current.addRawBatch(redData);
+          greenController.current.addRawBatch(greenData);
+
+          tempArray.current.splice(0, 50);
+
+          // 5️⃣ 更新 UI
+          redChartRef.current?.setData(
+            redController.current.data
+          );
+
+          greenChartRef.current?.setData(
+            greenController.current.data
+          );
+        }
+      });
+    };
+
+    ecgBuffer.current.startOutput();
+
+    return () => {
+      ecgBuffer.current.stopOutput();
+    };
+
+  }, []);
+
+  /** ================= BLE 数据接收 ================= */
+
+  const onRawDataReceived = (data: number[]) => {
+    if (!data || data.length < 2) return;
+
+    const type = data[0];
+
+    // 0x28 控制包
+    if (type === 0x28) {
+      safeWrite(BleSDK.realECGWave(isMeasuringRef.current));
+      return;
+    }
+
+    // 0x07 ECG 数据
+    if (type !== 0x07) return;
+    if (data.length <= 2) return;
+
+    const count = Math.floor((data.length - 2) / 3);
+    const ecgArray: number[] = [];
+
+    for (let i = 0; i < count; i++) {
+
+      const base = 2 + i * 3;
+      if (base + 2 >= data.length) break;
+
+      let raw =
+        data[base] |
+        (data[base + 1] << 8) |
+        (data[base + 2] << 16);
+
+      // 24bit 有符号
+      if (raw & 0x800000) {
+        raw -= 0x1000000;
+      }
+
+      ecgArray.push(raw);
+    }
+
+    if (ecgArray.length > 0) {
+      ecgBuffer.current.appendDataArray(ecgArray);
+    }
+  };
+
+  /** ================= Start / Stop ================= */
+
   const start = () => {
     isMeasuringRef.current = true;
     setIsMeasuring(true);
-    safeWrite(BleSDK.healthMeasurementWithDataType(0x04, true, null)); //
+    safeWrite(
+      BleSDK.healthMeasurementWithDataType(0x04, true, null)
+    );
   };
 
   const stop = () => {
     isMeasuringRef.current = false;
     setIsMeasuring(false);
-    safeWrite(BleSDK.healthMeasurementWithDataType(0x04, false, null)); //
+    safeWrite(
+      BleSDK.healthMeasurementWithDataType(0x04, false, null)
+    );
   };
 
-  /** ================== 数据接收 ================== */
-  const onRawDataReceived = useCallback((data: number[]) => {
-    if (!data || data.length < 2) return;
-
-    const type = data[0];
-
-    // 0x28: 设备询问是否实时波形
-    if (type === 0x28) {
-      if (isMeasuringRef.current) {
-        console.log('---true')
-        safeWrite(BleSDK.realECGWave(true));
-
-      } else {
-        console.log('---false')
-        safeWrite(BleSDK.realECGWave(false));
-      }
-      // 这里通常不用处理，是否实时由 start/stop 控制
-    } else if (type === 0x07) {
-      // 7: ECG 数据
-      if (data.length > 16) {
-
-        const ecgValues: number[] = [];
-        const count = Math.floor((data.length - 2) / 3);
-
-        for (let i = 0; i < count; i++) {
-          const value =
-            data[2 + 3 * i] |
-            (data[3 + 3 * i] << 8) |
-            (data[4 + 3 * i] << 16);
-
-          ecgValues.push(adcToMv(value));
-        }
-
-        waveRef.current?.addShowDatasECG?.(ecgValues)
-      }
-
-    }
-
-
-  }, []);
-  // 更新 writeData
-  const updateWriteData = (writeData: (data: any) => void) => {
-    writeDataRef.current = writeData;
-  };
-
-  /** ================== ADC 转换 ================== */
-  const adcToMv = (value: number) => {
-    const temp = (2.4 * 1000) / (126976 * 32);
-    const allTemp = value - 63488 * 32;
-    return (allTemp * temp) / 20.6;
-  };
   const safeWrite = (cmd: any) => {
     writeDataRef.current?.(cmd);
   };
 
-  const renderBleButton = (
-    connected: boolean,
-    connect: (deviceId: string) => void
-  ) => {
-    let text = "连接蓝牙";
-    let disabled = false;
+  /** ================= UI ================= */
 
-    if (connected) {
-      text = "已连接";
-      disabled = true;
-    }
+  return (
+    <BaseBleComponent onRawDataReceived={onRawDataReceived}>
+      {({ connected, connect, writeData }) => {
 
-    return (
-      <TouchableOpacity
-        disabled={disabled}
-        onPress={() => {
-          if (disabled) return;
-          connect(mac);
-        }}
-        style={[
-          styles.bleBtn,
-          disabled && styles.btnDisabled,
-        ]}
-      >
-        <Text>{text}</Text>
-      </TouchableOpacity>
-    );
-  };
+        writeDataRef.current = writeData;
 
+        return (
+          <View style={styles.container}>
 
-  /** ================== UI ================== */
-  return (<BaseBleComponent onRawDataReceived={onRawDataReceived}>
-    {({ connected, connect, writeData }) => {
-      updateWriteData(writeData);
-
-      return (
-        <View style={styles.container}>
-
-          {/* 蓝牙连接按钮 */}
-          {renderBleButton(connected, connect)}
-
-          {/* Start / Stop */}
-          <View style={styles.row}>
-            {/* Start */}
+            {/* 蓝牙连接 */}
             <TouchableOpacity
-              disabled={!connected || isMeasuring}
+              disabled={connected}
+              onPress={() => connect(mac)}
               style={[
-                styles.btn,
-                (!connected || isMeasuring) && styles.btnDisabled,
+                styles.bleBtn,
+                connected && styles.btnDisabled
               ]}
-              onPress={start}
             >
-              <Text>Start</Text>
+              <Text>
+                {connected ? "已连接" : "连接蓝牙"}
+              </Text>
             </TouchableOpacity>
 
-            {/* Stop */}
-            <TouchableOpacity
-              disabled={!connected}
-              style={[
-                styles.btn,
-                (!connected) && styles.btnDisabled,
-              ]}
-              onPress={stop}
-            >
-              <Text>Stop</Text>
-            </TouchableOpacity>
+            {/* Start / Stop */}
+            <View style={styles.row}>
+              <TouchableOpacity
+                disabled={!connected || isMeasuring}
+                style={[
+                  styles.btn,
+                  (!connected || isMeasuring) &&
+                  styles.btnDisabled
+                ]}
+                onPress={start}
+              >
+                <Text>Start</Text>
+              </TouchableOpacity>
+
+              <TouchableOpacity
+                disabled={!connected}
+                style={[
+                  styles.btn,
+                  (!connected) && styles.btnDisabled
+                ]}
+                onPress={stop}
+              >
+                <Text>Stop</Text>
+              </TouchableOpacity>
+            </View>
+
+            {/* 分析后波形 */}
+            <ECGNewChartView
+              ref={redChartRef}
+              width={width}
+              height={200}
+              lineColor="red"
+            />
+
+            {/* 原始波形 */}
+            <ECGNewChartView
+              ref={greenChartRef}
+              width={width}
+              height={200}
+              lineColor="green"
+            />
+
           </View>
-
-          <ECGChartView
-            ref={waveRef}
-            width={width}
-            height={400}
-            showTime={5}
-            singleNumber={255}
-            lineColor="#fb0e3b"
-            lineWidth={1}
-            blankCount={200}
-          />
-
-        </View>
-      );
-    }}
-  </BaseBleComponent>
-  )
+        );
+      }}
+    </BaseBleComponent>
+  );
 }
 
 const styles = StyleSheet.create({
-  container: { flex: 1, padding: 12 },
+  container: {
+    flex: 1,
+    padding: 12,
+    backgroundColor: "#fff"
+  },
   row: {
     flexDirection: "row",
     justifyContent: "space-between",
@@ -199,7 +265,6 @@ const styles = StyleSheet.create({
   btnDisabled: {
     backgroundColor: "#ccc",
   },
-
   bleBtn: {
     padding: 14,
     backgroundColor: "#d0ebff",
@@ -207,5 +272,4 @@ const styles = StyleSheet.create({
     alignItems: "center",
     marginBottom: 12,
   },
-
 });
