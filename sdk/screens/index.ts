@@ -14,7 +14,6 @@ export const screenConfig: Record<string, string> =  {
   "/pages/TempHistoryPage": "温度历史",
   "/pages/HealthMeasurementPage": "健康测量控制",
   "/pages/SportModePage": "运动模式",
-  "/pages/HrvTimeInfoPage": "Hrv测量时长",
   "/pages/AlarmClockPage": "闹钟",
   "/pages/SedentaryRemindPage": "久坐提醒",
    "/pages/BloodInfoPage": "血糖",
