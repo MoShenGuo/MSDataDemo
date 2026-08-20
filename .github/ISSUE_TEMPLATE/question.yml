@@ -1,0 +1,24 @@
+name: "❓ Question / 集成提问"
+description: "Ask a question about integrating the SDK / 关于 SDK 集成的问题"
+title: "[Question] "
+labels: ["question"]
+body:
+  - type: dropdown
+    id: device-type
+    attributes:
+      label: "Device model (deviceType) / 设备型号"
+      options: ["X6", "2208", "2208A", "V4", "V5", "2025", "V8", "Not sure / 不确定"]
+    validations:
+      required: true
+  - type: textarea
+    id: question
+    attributes:
+      label: "Your question / 你的问题"
+    validations:
+      required: true
+  - type: textarea
+    id: context
+    attributes:
+      label: "Relevant code / 相关代码"
+      description: "Which BleSDK method(s) and how you call them. / 涉及的 BleSDK 方法及调用方式。"
+      render: ts

@@ -1,0 +1,51 @@
+name: "🐛 Bug report / 问题反馈"
+description: "Report a problem with the SDK or demo / 反馈 SDK 或示例的问题"
+title: "[Bug] "
+labels: ["bug"]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Thanks for the report! Please fill in as much as you can. / 感谢反馈！请尽量填写完整。
+  - type: input
+    id: sdk-version
+    attributes:
+      label: "SDK version / SDK 版本"
+      placeholder: "@yhmedical/ms-data-sdk 0.1.x"
+    validations:
+      required: true
+  - type: dropdown
+    id: device-type
+    attributes:
+      label: "Device model (deviceType) / 设备型号"
+      options: ["X6", "2208", "2208A", "V4", "V5", "2025", "V8"]
+    validations:
+      required: true
+  - type: input
+    id: platform
+    attributes:
+      label: "Phone OS & version / 手机系统及版本"
+      placeholder: "iOS 17.5 / Android 14"
+    validations:
+      required: true
+  - type: textarea
+    id: what-happened
+    attributes:
+      label: "What happened / 问题描述"
+      description: "What did you expect vs. what actually happened? / 期望结果与实际结果"
+    validations:
+      required: true
+  - type: textarea
+    id: repro
+    attributes:
+      label: "Steps to reproduce / 复现步骤"
+      placeholder: |
+        1. Connect X6 / 连接 X6
+        2. Call BleSDK.xxx() / 调用 BleSDK.xxx()
+        3. ...
+  - type: textarea
+    id: raw-data
+    attributes:
+      label: "Command sent & raw/parsed data / 下发指令与原始/解析数据"
+      description: "The byte array you sent and the raw bytes / parsed result you received. / 下发的字节数组，以及收到的原始字节或解析结果。"
+      render: text
