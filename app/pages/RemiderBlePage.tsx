@@ -1,4 +1,4 @@
-import { BleSDK, DeviceKey } from "@moshenguo/ms-data-sdk";
+import { BleSDK, DeviceKey } from "@yhmedical/ms-data-sdk";
 import React, { useCallback, useRef, useState } from 'react';
 import {
   Alert,

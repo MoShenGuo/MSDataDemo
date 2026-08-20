@@ -11,7 +11,7 @@ import {
   View,
 } from 'react-native';
 
-import { BleSDK, DeviceKey } from "@moshenguo/ms-data-sdk";
+import { BleSDK, DeviceKey } from "@yhmedical/ms-data-sdk";
 import BaseBleComponent from '../BaseBleComponent';
 
 const TakePhotoBlePage: React.FC = () => {

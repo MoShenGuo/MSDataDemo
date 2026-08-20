@@ -16,7 +16,7 @@ import {
 
 import React, { useCallback, useState } from 'react';
 
-import { BleConst, BleSDK, DeviceKey, MyPersonalInfo } from "@moshenguo/ms-data-sdk";
+import { BleConst, BleSDK, DeviceKey, MyPersonalInfo } from "@yhmedical/ms-data-sdk";
 
 import { useTranslation } from "react-i18next";
 import BaseBleComponent from '../BaseBleComponent'; // 确保路径正确

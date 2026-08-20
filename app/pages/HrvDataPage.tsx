@@ -2,7 +2,7 @@
 import React, { useCallback, useRef, useState } from 'react';
 import { ActivityIndicator, Button, FlatList, StyleSheet, Text, View } from 'react-native';
 
-import { BleConst, BleSDK, DeviceKey } from "@moshenguo/ms-data-sdk";
+import { BleConst, BleSDK, DeviceKey } from "@yhmedical/ms-data-sdk";
 import { useTranslation } from "react-i18next";
 import BaseBleComponent from '../BaseBleComponent';
 // ✅ 正确定义组件

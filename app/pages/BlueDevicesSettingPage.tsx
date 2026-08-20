@@ -1,5 +1,5 @@
 
-import { BleConst, BleSDK, DeviceKey } from "@moshenguo/ms-data-sdk";
+import { BleConst, BleSDK, DeviceKey } from "@yhmedical/ms-data-sdk";
 import React, { useCallback, useState } from 'react';
 import { useTranslation } from "react-i18next";
 import {

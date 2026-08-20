@@ -14,7 +14,7 @@ import {
   View,
 } from 'react-native';
 
-import { BleConst, BleSDK, DeviceKey } from "@moshenguo/ms-data-sdk";
+import { BleConst, BleSDK, DeviceKey } from "@yhmedical/ms-data-sdk";
 import { useTranslation } from "react-i18next";
 import BaseBleComponent from '../BaseBleComponent'; // 请按你的项目路径调整
 const MODE_START = 0;        // 读最近的步数详细数据

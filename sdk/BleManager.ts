@@ -1,5 +1,5 @@
 
-import { BleSDK } from "@moshenguo/ms-data-sdk";
+import { BleSDK } from "@yhmedical/ms-data-sdk";
 import { Alert, AppState, PermissionsAndroid, Platform } from 'react-native';
 import { BleManager, Characteristic, Device, Service, Subscription } from 'react-native-ble-plx';
 import { Base64Utils } from './Base64Utils';

@@ -1,6 +1,6 @@
 import BaseBleComponent from '@/app/BaseBleComponent';
 import { screenConfig } from '@/sdk/screens';
-import { BleConst, BleSDK, DeviceKey } from "@moshenguo/ms-data-sdk";
+import { BleConst, BleSDK, DeviceKey } from "@yhmedical/ms-data-sdk";
 import { useIsFocused } from '@react-navigation/native'; // expo-router 内部兼容
 import { useLocalSearchParams, useRouter } from 'expo-router';
 import React, { useCallback, useEffect, useRef, useState } from 'react';

@@ -1,7 +1,7 @@
 // import { BleConst, DeviceKey } from '@/sdk/bleConst';
 // import BleSDK from '@/sdk/bleSDK';
 // import { MyAutomaticHRMonitoring } from '@/sdk/models';
-import { BleConst, BleSDK, DeviceKey, MyAutomaticHRMonitoring } from "@moshenguo/ms-data-sdk";
+import { BleConst, BleSDK, DeviceKey, MyAutomaticHRMonitoring } from "@yhmedical/ms-data-sdk";
 import DateTimePicker from '@react-native-community/datetimepicker'; // 需要安装
 import React, {
   useCallback,

@@ -12,7 +12,7 @@ import {
   ConstParams,
   ECGSignalProcessor,
   Stats,
-} from "@moshenguo/ms-data-sdk";
+} from "@yhmedical/ms-data-sdk";
 import { useRoute } from "@react-navigation/native";
 import BaseBleComponent from "../BaseBleComponent";
 

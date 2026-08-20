@@ -1,4 +1,4 @@
-import { BleConst, BleSDK, DeviceKey, MySedentaryReminderV4 } from "@moshenguo/ms-data-sdk";
+import { BleConst, BleSDK, DeviceKey, MySedentaryReminderV4 } from "@yhmedical/ms-data-sdk";
 import DateTimePicker from "@react-native-community/datetimepicker";
 import { Picker } from "@react-native-picker/picker";
 import React, { useState } from "react";

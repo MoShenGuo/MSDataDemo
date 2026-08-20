@@ -15,7 +15,7 @@ import {
 } from 'react-native';
 
 // 引入蓝牙组件
-import { BleSDK, ResolveUtil } from "@moshenguo/ms-data-sdk";
+import { BleSDK, ResolveUtil } from "@yhmedical/ms-data-sdk";
 import * as FileSystem from 'expo-file-system';
 import { useTranslation } from "react-i18next";
 import BaseBleComponent from '../BaseBleComponent'; // 确保路径正确

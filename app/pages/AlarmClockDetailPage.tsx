@@ -1,4 +1,4 @@
-import { BleSDK } from "@moshenguo/ms-data-sdk";
+import { BleSDK } from "@yhmedical/ms-data-sdk";
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import DateTimePicker from "@react-native-community/datetimepicker";
 import { useNavigation, useRoute } from "@react-navigation/native";

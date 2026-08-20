@@ -1,4 +1,4 @@
-import { BleConst, BleSDK, DeviceKey } from "@moshenguo/ms-data-sdk";
+import { BleConst, BleSDK, DeviceKey } from "@yhmedical/ms-data-sdk";
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import { useIsFocused, useNavigation } from "@react-navigation/native";
 import { useRouter } from "expo-router";
