@@ -15,8 +15,10 @@ import {
 import { BleConst, BleSDK, DeviceKey } from "@yhmedical/ms-data-sdk";
 import { useTranslation } from "react-i18next";
 import BaseBleComponent from '../BaseBleComponent';
+import { bleManager } from '@/sdk/BleManager';
 const TempHistoryPage: React.FC = () => {
      const { t } = useTranslation(); 
+  const isX6 = bleManager.deviceType === 'X6';
   // 模式定义
   const MODE_MAIN = 1;
   const MODE_TEST = 2;
@@ -41,7 +43,10 @@ const TempHistoryPage: React.FC = () => {
 
       const isTargetType =
         dataType === BleConst.GetAxillaryTemperatureDataWithMode ||
-        dataType === BleConst.Temperature_history;
+        dataType === BleConst.Temperature_history ||
+        dataType === BleConst.GetSleepTemperature ||               // X6 睡眠温度 (0x69)
+        dataType === BleConst.GetSleepBodyMovement ||              // X6 睡眠体动/心率/HRV/呼吸 (0x6A)
+        dataType === BleConst.GetRealTimeTemperatureCorrection;    // X6 实时温度 (0x14)
 
       if (!isTargetType) return;
 
@@ -147,6 +152,39 @@ const TempHistoryPage: React.FC = () => {
                 <View style={styles.buttonContainer}>
                   <Button title={t("获取温度数据(测试页面)")} onPress={handleFetchData} />
                 </View>
+
+                {/* X6 专用: 睡眠温度 / 睡眠体动 / 实时温度 */}
+                {isX6 && (
+                  <>
+                    <View style={styles.buttonContainer}>
+                      <Button
+                        title="睡眠每分钟温度(0x69)"
+                        onPress={() => {
+                          setList([]);
+                          writeData(BleSDK.getSleepTemperatureDataWithMode(0));
+                        }}
+                      />
+                    </View>
+                    <View style={styles.buttonContainer}>
+                      <Button
+                        title="睡眠体动/心率/HRV/呼吸(0x6A)"
+                        onPress={() => {
+                          setList([]);
+                          writeData(BleSDK.getSleepBodyMovementDataWithMode(0));
+                        }}
+                      />
+                    </View>
+                    <View style={styles.buttonContainer}>
+                      <Button
+                        title="实时温度(0x14)"
+                        onPress={() => {
+                          setList([]);
+                          writeData(BleSDK.getRealTimeTemperatureX6());
+                        }}
+                      />
+                    </View>
+                  </>
+                )}
 
                 {/* 删除数据按钮 */}
                 <View style={styles.buttonContainer}>

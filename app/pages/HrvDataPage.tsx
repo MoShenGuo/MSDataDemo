@@ -5,9 +5,11 @@ import { ActivityIndicator, Button, FlatList, StyleSheet, Text, View } from 'rea
 import { BleConst, BleSDK, DeviceKey } from "@yhmedical/ms-data-sdk";
 import { useTranslation } from "react-i18next";
 import BaseBleComponent from '../BaseBleComponent';
+import { bleManager } from '@/sdk/BleManager';
 // ✅ 正确定义组件
 const HrvDataPage: React.FC = () => {
      const { t } = useTranslation(); 
+  const isX6 = bleManager.deviceType === 'X6';
   const modeStart = 0;
   const modeContinue = 2;
   const modeDelete = 99;
@@ -29,7 +31,8 @@ const HrvDataPage: React.FC = () => {
   const handleDataReceived = useCallback((dataMap: any) => {
 
     const dataType = dataMap[DeviceKey.DataType];
-    if (dataType !== BleConst.GetHRVData) return;
+    // HRV 数据; X6 额外支持 PPI 数据 (0x63)
+    if (dataType !== BleConst.GetHRVData && dataType !== BleConst.GetPPIData) return;
 
     const dataList = dataMap[DeviceKey.Data] || [];
     const finish = dataMap[DeviceKey.End] || false;
@@ -62,6 +65,18 @@ const HrvDataPage: React.FC = () => {
     []
   );
 
+  // X6: 读取 PPI 数据 (0x63)
+  const getPPIData = useCallback(
+    (mode: number, writeData: (data: number[]) => void) => {
+      loadingRef.current = true;
+      setLoading(true);
+      listRef.current = [];
+      setList([]);
+      writeData(BleSDK.getPPIDDataWithMode(mode));
+    },
+    []
+  );
+
   // ✅ 必须 return 返回 JSX！
   return (
     <BaseBleComponent onDataReceived={handleDataReceived}>
@@ -80,6 +95,13 @@ const HrvDataPage: React.FC = () => {
             //   disabled={!connected}
             />
           </View>
+
+          {isX6 && (
+            <View style={styles.buttonContainer}>
+              <Button title="读取PPI数据(0x63)" onPress={() => getPPIData(modeStart, writeData)} />
+              <Button title="删除PPI数据" color="red" onPress={() => getPPIData(modeDelete, writeData)} />
+            </View>
+          )}
 
           {loading && <ActivityIndicator size="large" color="#0000ff" />}
 

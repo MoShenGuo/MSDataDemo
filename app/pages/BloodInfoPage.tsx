@@ -97,23 +97,33 @@ const BloodInfoPage: React.FC = () => {
     const finish = Boolean(arg[DeviceKey.End]);
 
     switch (dataType) {
-      case BleConst.BoolsugarStatus:
-        const flag = data[DeviceKey.EcgStatus];
-        switch (flag) {
-          case 1:
-            startCount();
-            break;
-          case 3:
-            endCount();
-            break;
-          // 其他状态忽略
-        }
+      // 0x78 血糖状态回包 (SDK 解析为 ppg* 系列)
+      case BleConst.ppgStartSucessed: // 开始检测成功 -> 启动进度
+        startCount();
+        break;
+      case BleConst.ppgResult:        // 测试成功(有结果)
+      case BleConst.ppgStop:          // 停止信号采集
+      case BleConst.ppgQuit:          // 退出测量
+        endCount();
+        break;
+      case BleConst.ppgStartFailed:   // 开始失败(电量低/跑步模式等)
+        endCount();
+        Alert.alert('血糖', '测试失败: 电量过低 / 跑步模式 / 设备异常');
+        break;
+      case BleConst.ppgMeasurementProgress: // 进度更新
         break;
 
-      case BleConst.BoolsugarValue:
-        // 插入到列表最前面
+      case BleConst.BoolsugarValue:   // 0x3A 血糖原始数据(PPG)
         setList((prev) => [data, ...prev]);
         break;
+
+      // 兼容: 若固件/解析走 BoolsugarStatus
+      case BleConst.BoolsugarStatus: {
+        const flag = data?.[DeviceKey.EcgStatus];
+        if (flag === 1) startCount();
+        else if (flag === 3) endCount();
+        break;
+      }
     }
   }, [startCount, endCount]);
 

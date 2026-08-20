@@ -15,8 +15,11 @@ import {
 import { BleConst, BleSDK, DeviceKey } from "@yhmedical/ms-data-sdk";
 import { useTranslation } from "react-i18next";
 import BaseBleComponent from '../BaseBleComponent'; // 确保路径正确
+import { bleManager } from '@/sdk/BleManager';
 const SetGoalsPage: React.FC = () => {
   const { t } = useTranslation(); 
+  // X6(2301 戒指) 只支持步数目标, 不支持距离/卡路里/睡眠目标
+  const isX6 = bleManager.deviceType === 'X6';
   // 控制器（TextInput 的值）
   const stepController = useRef<TextInput>(null);
   const distanceController = useRef<TextInput>(null);
@@ -76,6 +79,26 @@ const data = map[DeviceKey.Data];
   // 设置目标按钮点击
   const handleSetGoals = () => {
     const step = parseInt(stepText, 10);
+
+    if (isNaN(step)) {
+      Alert.alert(t('提示'), t('请填写所有目标值'));
+      return;
+    }
+    if (step < 2000 || step > 50000) {
+      Alert.alert(t('提示)'), t('目标步数范围：2000-50000'));
+      return;
+    }
+
+    // X6 只支持步数目标, 距离/卡路里/睡眠一律传 0 (固件忽略)
+    if (isX6) {
+      if (writeDataRef.current) {
+        writeDataRef.current(BleSDK.setStepGoal(step, 3600, 0, 0, 0));
+      } else {
+        Alert.alert(t('错误'), t('蓝牙未连接'));
+      }
+      return;
+    }
+
     const distance = parseInt(distanceText, 10);
     const calorie = parseInt(calorieText, 10);
     const sleepHour = parseInt(sleepHourText, 10);
@@ -83,7 +106,6 @@ const data = map[DeviceKey.Data];
 
     // 验证输入
     if (
-      isNaN(step) ||
       isNaN(distance) ||
       isNaN(calorie) ||
       isNaN(sleepHour) ||
@@ -93,7 +115,7 @@ const data = map[DeviceKey.Data];
       return;
     }
 
-    if (step < 2000 || step > 50000) {
+    if (false) {
       Alert.alert(t('提示)'), t('目标步数范围：2000-50000'));
       return;
     }
@@ -155,6 +177,10 @@ const data = map[DeviceKey.Data];
                   />
                 </View>
 
+                {isX6 ? (
+                  <Text style={styles.hint}>X6 戒指仅支持步数目标, 不支持距离/卡路里/睡眠目标。</Text>
+                ) : (
+                <>
                 {/* 目标距离 */}
                 <View style={styles.row}>
                   <Text style={styles.label}>{t('目标距离(千米)')}</Text>
@@ -205,6 +231,8 @@ const data = map[DeviceKey.Data];
                     keyboardType="number-pad"
                   />
                 </View>
+                </>
+                )}
 
                 {/* 按钮组 */}
                 <View style={styles.buttonRow}>
@@ -252,6 +280,12 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     marginVertical: 10,
     paddingHorizontal: 10,
+  },
+  hint: {
+    fontSize: 13,
+    color: '#999',
+    paddingHorizontal: 10,
+    marginVertical: 10,
   },
   label: {
     width: 100,

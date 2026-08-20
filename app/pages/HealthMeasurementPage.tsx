@@ -15,9 +15,11 @@ import {
   View
 } from 'react-native';
 import BaseBleComponent from '../BaseBleComponent'; // 确保路径正确
+import { bleManager } from '@/sdk/BleManager';
 const HealthMeasurementPage: React.FC = () => {
      const { t } = useTranslation(); 
-  // 测量模式：2-心率，3-血氧
+  const isX6 = bleManager.deviceType === 'X6';
+  // 测量模式：1-HRV(X6)，2-心率，3-血氧
   const [mode, setMode] = useState<number>(2);
   const [enable, setEnable] = useState<boolean>(false);
   const [text, setText] = useState<string>(t('等待数据...'));
@@ -42,10 +44,16 @@ const HealthMeasurementPage: React.FC = () => {
         BleConst.StopMeasurementHeartCallback,
         BleConst.StopMeasurementOxygenCallback,
         BleConst.StopMeasurementTempCallback,
+        // X6 专用: 手动 HRV 结果 / 状态查询
+        BleConst.ManualHrvResult,
+        BleConst.ManualHrvFailed,
+        BleConst.MeasurementStatus,
+        BleConst.GetBloodPressureConfig,
+        BleConst.SetBloodPressureConfig,
       ].includes(dataType);
 
     if (isMeasurementType) {
-      setText(JSON.stringify(arg));
+      setText(`[${dataType}] ${JSON.stringify(arg[DeviceKey.Data] ?? {})}`);
     } else if (dataType === BleConst.RealTimeStep) {
       const data = arg[DeviceKey.Data];
       const displayText = `心率: ${data?.[DeviceKey.HeartRate] ?? '?'}, 血氧: ${data?.[DeviceKey.Blood_oxygen] ?? '?'}%`;
@@ -64,7 +72,7 @@ const HealthMeasurementPage: React.FC = () => {
       Alert.alert('错误', '蓝牙未连接');
       return;
     }
-    const command = BleSDK.healthMeasurementWithDataType(mode, enable);
+    const command = BleSDK.healthMeasurementWithDataType(mode, enable, null);
     writeDataRef.current(command);
   };
 
@@ -95,6 +103,15 @@ const HealthMeasurementPage: React.FC = () => {
     timerRef.current = null;
   }
 }, []); // 👈 添加空依赖数组
+  // 结束实时计步 (定义在 useEffect 之前, 避免 use-before-declaration)
+  const endRealTimeStep = useCallback(() => {
+    if (writeDataRef.current) {
+      const command = BleSDK.realTimeStep(false, false);
+      writeDataRef.current(command);
+      writeDataRef.current = null;
+    }
+  }, []);
+
   // 使用 useEffect 确保在组件卸载时关闭定时器
   useEffect(() => {
     return () => {
@@ -113,14 +130,6 @@ const HealthMeasurementPage: React.FC = () => {
       stopTimer();
     }
   };
-const endRealTimeStep = useCallback(() => {
-  
-  if (writeDataRef.current) {
-      const command = BleSDK.realTimeStep(false, false);
-    writeDataRef.current(command);
-    writeDataRef.current = null;
-  }
-}, []);
   // 处理连接设备
   const handleConnect = () => {
     setIsConnecting(true);
@@ -167,6 +176,14 @@ const endRealTimeStep = useCallback(() => {
 
                 {/* 测量模式选择 */}
                 <View style={styles.radioGroup}>
+                  {isX6 && (
+                    <View style={styles.radioButton}>
+                      <TouchableOpacity onPress={() => setMode(1)}>
+                        <View style={[styles.radio, mode === 1 && styles.radioSelected]} />
+                      </TouchableOpacity>
+                      <Text style={styles.radioLabel}>HRV</Text>
+                    </View>
+                  )}
                   <View style={styles.radioButton}>
                     <TouchableOpacity onPress={() => setMode(2)}>
                       <View style={[styles.radio, mode === 2 && styles.radioSelected]} />
@@ -198,6 +215,24 @@ const endRealTimeStep = useCallback(() => {
                 <TouchableOpacity style={styles.button} onPress={handleStartRealTimeStep}>
                   <Text style={styles.buttonText}>{t('开启实时计步')}</Text>
                 </TouchableOpacity>
+
+                {/* X6 专用: 血压校准读写 */}
+                {isX6 && (
+                  <>
+                    <TouchableOpacity
+                      style={styles.button}
+                      onPress={() => writeDataRef.current?.(BleSDK.readBpCalibration())}
+                    >
+                      <Text style={styles.buttonText}>读取血压校准配置</Text>
+                    </TouchableOpacity>
+                    <TouchableOpacity
+                      style={styles.button}
+                      onPress={() => writeDataRef.current?.(BleSDK.setBpCalibration(60, 90, 110, 140))}
+                    >
+                      <Text style={styles.buttonText}>写入血压校准配置(60/90/110/140)</Text>
+                    </TouchableOpacity>
+                  </>
+                )}
 
                 {/* 数据显示 */}
                 <View style={styles.dataContainer}>

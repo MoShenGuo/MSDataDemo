@@ -15,6 +15,17 @@ import {
 } from 'react-native';
 // import { screenConfig } from "@/screens";
 import { useTranslation } from "react-i18next";
+import { bleManager } from '@/sdk/BleManager';
+
+// X6 (2301 戒指) 不支持的功能页面路由, 连接 X6 时从菜单隐藏
+const X6_HIDDEN_PAGES = [
+  '/pages/AlarmClockPage',
+  '/pages/SedentaryRemindPage',
+  '/pages/RemiderBlePage',
+  '/pages/WeatherBlePage',
+  '/pages/TakePhotoBlePage',
+  '/pages/PPGScreen',
+];
 const MainPage = () => {
    const { t } = useTranslation(); 
   const router = useRouter();
@@ -146,7 +157,9 @@ const listData = Object.entries(screenConfig).map(([page, title]) => {
             {/* 功能菜单 */}
             
 <FlatList
-      data={listData}
+      data={bleManager.deviceType === 'X6'
+        ? listData.filter((it) => !X6_HIDDEN_PAGES.includes(it.id))
+        : listData}
       keyExtractor={(item) => item.id}
       numColumns={2}
       contentContainerStyle={styles.menuContainer}

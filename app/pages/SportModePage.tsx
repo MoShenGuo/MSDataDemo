@@ -58,6 +58,9 @@ const SportModePage: React.FC = () => {
         }
       }
       setContent(JSON.stringify(arg));
+    } else if (dataType === BleConst.ExerciseEnd) {
+      // X6: 运动结束 (0x18 HR=0xFF)
+      endSport();
     }
   }, []);
 
@@ -120,7 +123,8 @@ const SportModePage: React.FC = () => {
 
   // 结束运动
   const endSport = useCallback(() => {
-    if (status === Status.START || status === Status.CONTINUE) {
+    // 允许从 开始/继续/暂停 任意进行中状态结束 (整个复位都在守卫内)
+    if (status === Status.START || status === Status.CONTINUE || status === Status.PAUSE) {
       sendCommand(BleSDK.enterActivityMode(mode, Status.FINISH));
       if (timerRef.current) {
         clearInterval(timerRef.current);
@@ -131,12 +135,16 @@ const SportModePage: React.FC = () => {
     }
   }, [mode, status]);
 
-  // 页面卸载时清理
+  // 保存最新 endSport, 仅在卸载时调用 (不放进依赖, 否则每次状态变化都触发清理->误发结束)
+  const endSportRef = useRef<(() => void) | null>(null);
+  endSportRef.current = endSport;
+
+  // 页面卸载时清理 (仅执行一次)
   useEffect(() => {
     return () => {
-      endSport(); // 退出时自动结束运动
+      endSportRef.current?.();
     };
-  }, [endSport]);
+  }, []);
 
   // 渲染单个运动项目
   const renderSportItem = ({ item, index }: { item: string; index: number }) => (

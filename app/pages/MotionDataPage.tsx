@@ -16,6 +16,7 @@ import {
 import { BleConst, BleSDK, DeviceKey } from "@yhmedical/ms-data-sdk";
 import { useTranslation } from "react-i18next";
 import BaseBleComponent from '../BaseBleComponent'; // 确保路径正确
+import { bleManager } from '@/sdk/BleManager';
 // 模式常量
 const MODE_START = 0;        // 读最近的步数详细数据
 const MODE_CONTINUE = 2;     // 继续读取下一段
@@ -23,6 +24,7 @@ const MODE_DELETE = 0x99;    // 删除数据
 
 const MotionDataPage: React.FC = () => {
      const { t } = useTranslation(); 
+  const isX6 = bleManager.deviceType === 'X6';
   const [list, setList] = useState<Record<string, any>[]>([]);
   const [dataCount, setDataCount] = useState<number>(0);
   const [time, setTime] = useState<string>('');
@@ -51,6 +53,19 @@ const MotionDataPage: React.FC = () => {
       if (!dataMap || typeof dataMap !== "object") return;
     const finish = dataMap[DeviceKey.End];
     const dataType = dataMap[DeviceKey.DataType];
+
+    // X6 专用: 运动模式最长时间 / 功耗调试, 直接追加展示
+    if (
+      dataType === BleConst.GetMaxSportTime ||
+      dataType === BleConst.SetMaxSportTime ||
+      dataType === BleConst.GetPowerDebug
+    ) {
+      const payload = dataMap[DeviceKey.Data];
+      const items = Array.isArray(payload) ? payload : [payload];
+      setList((prev) => [...prev, ...items.map((it: any) => ({ [dataType]: it }))]);
+      return;
+    }
+
     if (dataType === BleConst.GetActivityModeData) {
       const newData =  dataMap[DeviceKey.Data] || [];
       setList((prev) => [...prev, ...newData]);
@@ -128,6 +143,21 @@ const MotionDataPage: React.FC = () => {
                   }}
                 />
               </View>
+
+              {/* X6 专用: 运动模式最长时间 / 功耗调试 */}
+              {isX6 && (
+                <>
+                  <View style={styles.buttonContainer}>
+                    <Button title="读取运动最长时间(0x1B)" onPress={() => writeData(BleSDK.getMaxSportTime())} />
+                  </View>
+                  <View style={styles.buttonContainer}>
+                    <Button title="设置运动最长时间120分钟" onPress={() => writeData(BleSDK.setMaxSportTime(120))} />
+                  </View>
+                  <View style={styles.buttonContainer}>
+                    <Button title="功耗调试数据(0x67)" onPress={() => { setList([]); writeData(BleSDK.getPowerDebugDataWithMode(0)); }} />
+                  </View>
+                </>
+              )}
 
               {/* 数据列表 */}
               {list.length === 0 ? (

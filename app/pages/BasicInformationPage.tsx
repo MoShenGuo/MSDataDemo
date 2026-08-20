@@ -20,9 +20,11 @@ import { BleConst, BleSDK, DeviceKey, MyPersonalInfo } from "@yhmedical/ms-data-
 
 import { useTranslation } from "react-i18next";
 import BaseBleComponent from '../BaseBleComponent'; // 确保路径正确
+import { bleManager } from '@/sdk/BleManager';
 
 const BasicInformationPage: React.FC = () => {
    const { t } = useTranslation(); 
+  const isX6 = bleManager.deviceType === 'X6';
   // 表单状态
   const [sex, setSex] = useState<boolean>(false); // false=男, true=女
   const [age, setAge] = useState<string>('');
@@ -30,6 +32,8 @@ const BasicInformationPage: React.FC = () => {
   const [weight, setWeight] = useState<string>('');
   const [stride, setStride] = useState<string>('');
   const [loading, setLoading] = useState<boolean>(false);
+  // X6 戒指名字
+  const [deviceName, setDeviceName] = useState<string>('');
 
   // 接收蓝牙数据
   const handleDataReceived = useCallback((data: any) => {
@@ -56,6 +60,10 @@ const BasicInformationPage: React.FC = () => {
         break;
       case BleConst.SetPersonalInfo:
         Alert.alert('SetPersonalInfo', JSON.stringify(data));
+        break;
+      case BleConst.GetDeviceName:
+        setDeviceName(String((data[DeviceKey.Data] || {})[DeviceKey.DeviceName] || ''));
+        Alert.alert('GetDeviceName', JSON.stringify(data));
         break;
       default:
         console.log('Unknown data type:', dataType);
@@ -159,6 +167,38 @@ if (stride.trim()) {
                 />
               </View>
             </View>
+
+            {/* X6 戒指名字 (24字节 UTF-8) */}
+            {isX6 && (
+              <View>
+                <View style={styles.titleContainer}>
+                  <Text style={styles.title}>{'戒指名字'}</Text>
+                </View>
+                <TextInput
+                  style={styles.input}
+                  value={deviceName}
+                  onChangeText={setDeviceName}
+                  placeholder="戒指名字 (最多21字节, 支持中文)"
+                  textAlign="center"
+                />
+                <View style={[styles.row, { marginTop: 10 }]}>
+                  <View style={styles.buttonContainer}>
+                    <Button
+                      title={'设置名字'}
+                      onPress={() => writeData(BleSDK.setDeviceNameX6(deviceName))}
+                      disabled={!connected}
+                    />
+                  </View>
+                  <View style={styles.buttonContainer}>
+                    <Button
+                      title={'获取名字'}
+                      onPress={() => writeData(BleSDK.getDeviceNameX6())}
+                      disabled={!connected}
+                    />
+                  </View>
+                </View>
+              </View>
+            )}
 
             {/* 标题 */}
             <View style={styles.titleContainer}>

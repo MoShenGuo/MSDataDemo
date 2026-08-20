@@ -12,6 +12,8 @@ class MSBleManager {
   private manager = new BleManager();
   private isScanning = false;
   private _isConnected = false;
+  // 当前设备类型 (用于 dataParsingWithData 解析), 可切换: '2208' | 'V4' | 'V5' | '2025' | 'V8' | 'X6'
+  public deviceType: any = 'X6';
   private manualDisconnection = false;
   private connectCount = 0;
   private device: Device | null = null;
@@ -528,7 +530,7 @@ private async requestAndroidPermissions(): Promise<boolean> {
         }
         // 使用封装的方法统一解析数据
         const valueArray = Base64Utils.parseCharacteristicValue(characteristic.value);
-        const data = BleSDK.dataParsingWithData(valueArray,'V5');
+        const data = BleSDK.dataParsingWithData(valueArray, this.deviceType);
         console.log('Receive:', data);
         this.eventEmitter.emit(Constants.BLUE_DATA_RECEIVED, data);
         this.eventEmitter.emit('dataByteCallBack', valueArray);
